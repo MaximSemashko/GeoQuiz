@@ -1,5 +1,8 @@
 package com.example.cobra.geoquiz;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,12 +17,29 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
     private static int CORRECT_ANSWERS=0;
+    private static final int REQUEST_CODE_CHEAT = 0;
+    private boolean mIsCheater;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != Activity.RESULT_OK) {
+            return;
+        }
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            if (data == null) {
+                return;
+            }
+            mIsCheater = CheatActivity.wasAnswerShown(data);
+        }
+    }
 
     private Button mTrueButton;
     private Button mFalseButton;
     private TextView mQuestionText;
     private Button mNextButton;
     private Button mPrevButton;
+    private Button mCheatButton;
+
     private Question[] mQuestionBank = new Question[]{
         new Question(R.string.question_australia, true),
                 new Question(R.string.question_oceans, true),
@@ -45,9 +65,19 @@ public class MainActivity extends AppCompatActivity {
         mNextButton=findViewById(R.id.next_button);
         mPrevButton=findViewById(R.id.prev_button);
         mQuestionText=findViewById(R.id.question_text);
+        mCheatButton=findViewById(R.id.cheat_button);
 
         updateQuestion();
 
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Start CheatActivity
+                boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
+                Intent intent = CheatActivity.newIntent(MainActivity.this, answerIsTrue);
+                startActivityForResult(intent,REQUEST_CODE_CHEAT);
+            }
+        });
         mTrueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -65,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                mIsCheater = false;
                 mCurrentIndex=(mCurrentIndex+1)%mQuestionBank.length;
                 updateQuestion();
             }
@@ -73,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
         mPrevButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                mIsCheater = false;
                 mCurrentIndex=(mCurrentIndex-1)%mQuestionBank.length;
                 updateQuestion();
             }
@@ -138,27 +170,30 @@ public class MainActivity extends AppCompatActivity {
     private void checkAnswer(boolean userPressedTrue){
         boolean isAnswerTrue= mQuestionBank[mCurrentIndex].isAnswerTrue();
         int messageResId = 0;
-        if(userPressedTrue==isAnswerTrue) {
-            messageResId = R.string.correct_toast;
-            CORRECT_ANSWERS++;
+        if (mIsCheater) {
+            messageResId = R.string.judgment_toast;
+        } else {
+            if (userPressedTrue == isAnswerTrue) {
+                messageResId = R.string.correct_toast;
+                CORRECT_ANSWERS++;
+            } else
+                messageResId = R.string.incorrect_toast;
         }
-        else
-            messageResId = R.string.incorrect_toast;
-
-            Toast toast = Toast.makeText(MainActivity.this,messageResId,Toast.LENGTH_SHORT);
-            toast.setGravity(Gravity.TOP,0,0);
+            Toast toast = Toast.makeText(MainActivity.this, messageResId, Toast.LENGTH_SHORT);
+            toast.setGravity(Gravity.TOP, 0, 0);
             toast.show();
-        mTrueButton.setEnabled(false);
-        mFalseButton.setEnabled(false);
-
-        if(mCurrentIndex==mQuestionBank.length-1){
             mTrueButton.setEnabled(false);
             mFalseButton.setEnabled(false);
-            mNextButton.setEnabled(false);
-            mPrevButton.setEnabled(false);
-            mQuestionText.setEnabled(false);
-            double result = CORRECT_ANSWERS*100/mQuestionBank.length;
-            Toast.makeText(MainActivity.this,"Your result: "+result+"%",Toast.LENGTH_LONG).show();
+
+            if (mCurrentIndex == mQuestionBank.length - 1) {
+                mTrueButton.setEnabled(false);
+                mFalseButton.setEnabled(false);
+                mNextButton.setEnabled(false);
+                mPrevButton.setEnabled(false);
+                mQuestionText.setEnabled(false);
+                double result = CORRECT_ANSWERS * 100 / mQuestionBank.length;
+                Toast.makeText(MainActivity.this, "Your result: " + result + "%", Toast.LENGTH_LONG).show();
+
         }
     }
 }
