@@ -17,10 +17,15 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
     private static final String KEY_INDEX_TASK = "index";
+
+    private static int CHEAT_COUNT = 3;
+
     private static int CORRECT_ANSWERS=0;
     private static final int REQUEST_CODE_CHEAT = 0;
     private boolean mIsCheater;
 
+
+    //Check if we visite CheatActivity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode != Activity.RESULT_OK) {
@@ -40,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private Button mNextButton;
     private Button mPrevButton;
     private Button mCheatButton;
+    private TextView mCheatingCounter;
 
     private Question[] mQuestionBank = new Question[]{
         new Question(R.string.question_australia, true),
@@ -55,6 +61,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //Safe instance after rotation
         if (savedInstanceState != null) {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
             mIsCheater = savedInstanceState.getBoolean(KEY_INDEX_TASK,false);
@@ -68,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
         mPrevButton=findViewById(R.id.prev_button);
         mQuestionText=findViewById(R.id.question_text);
         mCheatButton=findViewById(R.id.cheat_button);
+        mCheatingCounter =findViewById(R.id.cheat_count);
 
         updateQuestion();
 
@@ -78,8 +87,10 @@ public class MainActivity extends AppCompatActivity {
                 boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
                 Intent intent = CheatActivity.newIntent(MainActivity.this, answerIsTrue);
                 startActivityForResult(intent,REQUEST_CODE_CHEAT);
+
             }
         });
+
         mTrueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -128,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG,"onDestroy called");
     }
 
+    //Save values in Bundle
     @Override
     public void onSaveInstanceState(Bundle onSaveInstanceState) {
         super.onSaveInstanceState(onSaveInstanceState);
@@ -168,6 +180,10 @@ public class MainActivity extends AppCompatActivity {
         mQuestionText.setText(question);
         mTrueButton.setEnabled(true);
         mFalseButton.setEnabled(true);
+
+        //if user dont answer the question - enable button
+        mNextButton.setEnabled(false);
+        mPrevButton.setEnabled(false);
     }
 
     //method to check answer
@@ -175,6 +191,13 @@ public class MainActivity extends AppCompatActivity {
         boolean isAnswerTrue= mQuestionBank[mCurrentIndex].isAnswerTrue();
         int messageResId = 0;
         if (mIsCheater) {
+            //limit cheating
+            CHEAT_COUNT--;
+            String counter = String.valueOf(CHEAT_COUNT);
+            mCheatingCounter.setText(counter);
+            if(CHEAT_COUNT==0)
+                mCheatButton.setEnabled(false);
+
             messageResId = R.string.judgment_toast;
         } else {
             if (userPressedTrue == isAnswerTrue) {
@@ -188,12 +211,16 @@ public class MainActivity extends AppCompatActivity {
             toast.show();
         mTrueButton.setEnabled(false);
         mFalseButton.setEnabled(false);
+        mNextButton.setEnabled(true);
+        mPrevButton.setEnabled(true);
 
+        //If last element - count result
         if(mCurrentIndex==mQuestionBank.length-1){
             mTrueButton.setEnabled(false);
             mFalseButton.setEnabled(false);
             mNextButton.setEnabled(false);
             mPrevButton.setEnabled(false);
+            mCheatButton.setEnabled(false);
             mQuestionText.setEnabled(false);
             double result = CORRECT_ANSWERS*100/mQuestionBank.length;
             Toast.makeText(MainActivity.this,"Your result: "+result+"%",Toast.LENGTH_LONG).show();

@@ -1,11 +1,15 @@
 package com.example.cobra.geoquiz;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewAnimationUtils;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -19,6 +23,7 @@ public class CheatActivity extends AppCompatActivity {
     private Boolean mAnswerIsTrue;
     private TextView mAnswerTextView;
     private Button mShowAnswerButton;
+    private TextView mApiLevel;
     private static final String ANSWER_INDEX="index";
 
     public static Intent newIntent(Context packageContext, boolean answerIsTrue){
@@ -43,7 +48,10 @@ public class CheatActivity extends AppCompatActivity {
         setContentView(R.layout.activity_cheat);
         mAnswerTextView=findViewById(R.id.answer_text_view);
         mShowAnswerButton=findViewById(R.id.answer_show_button);
+        mApiLevel = findViewById(R.id.api_level);
 
+        //add Build version to textView
+        mApiLevel.setText("API level: "+Build.VERSION.SDK_INT);
         if (savedInstanceState != null) {
             mAnswerIsTrue = savedInstanceState.getBoolean(ANSWER_INDEX,false);
         }
@@ -58,6 +66,24 @@ public class CheatActivity extends AppCompatActivity {
                 else
                     mAnswerTextView.setText(R.string.false_button);
                 setAnswerShownResult(true);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    int cx = mShowAnswerButton.getWidth() / 2;
+                    int cy = mShowAnswerButton.getHeight() / 2;
+                    float radius = mShowAnswerButton.getWidth();
+                    Animator anim = ViewAnimationUtils
+                            .createCircularReveal(mShowAnswerButton, cx, cy, radius, 0);
+                    anim.addListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            super.onAnimationEnd(animation);
+                            mShowAnswerButton.setVisibility(View.INVISIBLE);
+                        }
+                    });
+                    anim.start();
+                }
+                else{
+                    mShowAnswerButton.setVisibility(View.INVISIBLE);
+                }
             }
         });
     }
