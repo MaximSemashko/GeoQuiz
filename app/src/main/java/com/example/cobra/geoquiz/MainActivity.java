@@ -16,6 +16,7 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
+    private static final String KEY_INDEX_TASK = "index";
     private static int CORRECT_ANSWERS=0;
     private static final int REQUEST_CODE_CHEAT = 0;
     private boolean mIsCheater;
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         if (savedInstanceState != null) {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
+            mIsCheater = savedInstanceState.getBoolean(KEY_INDEX_TASK,false);
         }
 
 
@@ -127,10 +129,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        super.onSaveInstanceState(savedInstanceState);
+    public void onSaveInstanceState(Bundle onSaveInstanceState) {
+        super.onSaveInstanceState(onSaveInstanceState);
         Log.i(TAG, "onSaveInstanceState");
-        savedInstanceState.putInt(KEY_INDEX, mCurrentIndex);
+        onSaveInstanceState.putInt(KEY_INDEX, mCurrentIndex);
+        onSaveInstanceState.putBoolean(KEY_INDEX_TASK,mIsCheater);
+
     }
 
     @Override
@@ -182,18 +186,17 @@ public class MainActivity extends AppCompatActivity {
             Toast toast = Toast.makeText(MainActivity.this, messageResId, Toast.LENGTH_SHORT);
             toast.setGravity(Gravity.TOP, 0, 0);
             toast.show();
+        mTrueButton.setEnabled(false);
+        mFalseButton.setEnabled(false);
+
+        if(mCurrentIndex==mQuestionBank.length-1){
             mTrueButton.setEnabled(false);
             mFalseButton.setEnabled(false);
-
-            if (mCurrentIndex == mQuestionBank.length - 1) {
-                mTrueButton.setEnabled(false);
-                mFalseButton.setEnabled(false);
-                mNextButton.setEnabled(false);
-                mPrevButton.setEnabled(false);
-                mQuestionText.setEnabled(false);
-                double result = CORRECT_ANSWERS * 100 / mQuestionBank.length;
-                Toast.makeText(MainActivity.this, "Your result: " + result + "%", Toast.LENGTH_LONG).show();
-
+            mNextButton.setEnabled(false);
+            mPrevButton.setEnabled(false);
+            mQuestionText.setEnabled(false);
+            double result = CORRECT_ANSWERS*100/mQuestionBank.length;
+            Toast.makeText(MainActivity.this,"Your result: "+result+"%",Toast.LENGTH_LONG).show();
         }
     }
 }
